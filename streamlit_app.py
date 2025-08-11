@@ -30,15 +30,50 @@ else:
     )
 
     #add expense
-    if menu=="Add Expense":
-        st.subheader(":orange[Add New Expense]")
-        amount=st.number_input("Amount",min_value=0,step=1, placeholder="Enter an Amount")    #only +ve amount
-        category = st.text_input("Category",placeholder="Enter the Category")
-        exp_date = st.date_input("Date", value=datetime.date.today())  #default = today
-        description = st.text_area("Description (optional)")    #multi-line text input widget
+    # if menu=="Add Expense":
+    #     st.subheader(":orange[Add New Expense]")
+    #     amount=st.number_input("Amount",min_value=0,step=1, placeholder="Enter an Amount")    #only +ve amount
+    #     category = st.text_input("Category",placeholder="Enter the Category")
+    #     exp_date = st.date_input("Date", value=datetime.date.today())  #default = today
+    #     description = st.text_area("Description (optional)")    #multi-line text input widget
 
-        if st.button("Add Expense",type="primary"):
-            #payload to send to backend
+    #     if st.button("Add Expense",type="primary"):
+    #         #payload to send to backend
+    #         loadexpense = {
+    #             "amount": amount,
+    #             "category": category,
+    #             "date": str(exp_date),
+    #             "description": description if description else None
+    #         }
+    #         res = requests.post(f"{URI}/expenses/", json=loadexpense)
+    #         st.success(res.json().get("msg", "Expense added"))
+
+    # add expense
+if menu == "Add Expense":
+    st.subheader(":orange[Add New Expense]")
+
+    # Fetch categories from backend
+    cat_res = requests.get(f"{URI}/categories/")
+    if cat_res.status_code == 200:
+        categories_data = cat_res.json()
+        category_list = [cat["name"] for cat in categories_data] if categories_data else []
+    else:
+        st.error("Failed to load categories from database.")
+        category_list = []
+
+    amount = st.number_input("Amount", min_value=0, step=1, placeholder="Enter an Amount")
+    
+    # Dropdown for categories (if no categories, show empty list)
+    category = st.selectbox("Category", category_list)
+
+    exp_date = st.date_input("Date", value=datetime.date.today())
+    description = st.text_area("Description (optional)")
+
+    if st.button("Add Expense", type="primary"):
+        if not category:
+            st.error("Please select a category before adding expense.")
+        else:
+            # Payload to send to backend
             loadexpense = {
                 "amount": amount,
                 "category": category,
@@ -46,7 +81,10 @@ else:
                 "description": description if description else None
             }
             res = requests.post(f"{URI}/expenses/", json=loadexpense)
-            st.success(res.json().get("msg", "Expense added"))
+            if res.status_code == 200:
+                st.success(res.json().get("msg", "Expense added"))
+            else:
+                st.error("Failed to add expense.")
 
     # view all expenses section (with filters)
     elif menu=="View Expenses":
