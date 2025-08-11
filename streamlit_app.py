@@ -49,20 +49,38 @@ else:
     #         st.success(res.json().get("msg", "Expense added"))
 
     # add expense
-if menu == "Add Expense":
-    st.subheader(":orange[Add New Expense]")
+    # if menu == "Add Expense":
+    #     st.subheader(":orange[Add New Expense]")
+
+    #     # Fetch categories from backend
+    #     cat_res = requests.get(f"{URI}/categories/")
+    #     if cat_res.status_code == 200:
+    #         categories_data = cat_res.json()
+    #         category_list = [cat["name"] for cat in categories_data] if categories_data else []
+    #     else:
+    #         st.error("Failed to load categories from database.")
+    #         category_list = []
+
+    #     amount = st.number_input("Amount", min_value=0, step=1, placeholder="Enter an Amount")
+    if menu == "Add Expense":
+        st.subheader(":orange[Add New Expense]")
+
+    # Always define category_list first
+    category_list = []
 
     # Fetch categories from backend
-    cat_res = requests.get(f"{URI}/categories/")
-    if cat_res.status_code == 200:
-        categories_data = cat_res.json()
-        category_list = [cat["name"] for cat in categories_data] if categories_data else []
-    else:
-        st.error("Failed to load categories from database.")
-        category_list = []
+    try:
+        cat_res = requests.get(f"{URI}/categories/")
+        if cat_res.status_code == 200:
+            categories_data = cat_res.json()
+            category_list = [cat["name"] for cat in categories_data] if categories_data else []
+        else:
+            st.error("Failed to load categories from database.")
+    except Exception as e:
+        st.error(f"Error fetching categories: {e}")
 
     amount = st.number_input("Amount", min_value=0, step=1, placeholder="Enter an Amount")
-    
+
     # Dropdown for categories (if no categories, show empty list)
     category = st.selectbox("Category", category_list)
 
