@@ -125,7 +125,20 @@ def register_user(full_name: str, email: str, password: str):
     })
     return {"msg": "User registered successfully"}
 
+#login user
+def login_user(email: str, password: str):
+    user = users_collection.find_one({"email": email})
+    if not user:
+        return None
+    if not verify_password(password, user["password_hash"]):
+        return None
+    return user
+
 #add password hashing utility using bcrypt from Cryptocontext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+# pass verification
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
