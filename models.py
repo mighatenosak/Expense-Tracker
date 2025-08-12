@@ -13,3 +13,7 @@ class RegisterUser(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+# for login
+class LoginUser(BaseModel):
+    email: EmailStr
+    password: str
