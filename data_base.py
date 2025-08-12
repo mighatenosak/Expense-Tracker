@@ -24,3 +24,5 @@ db = client["expense_tracker"]
 #Main collection
 expenses_collection = db["expenses"]  
 categories_collection = db["category"]
+users_collection = db["users"]
+roles_collection = db["roles"]
