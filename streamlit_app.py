@@ -14,9 +14,9 @@ st.set_page_config(page_title="Expense Tracker",page_icon="🧊", layout="center
 st.title(":red[_Expense Tracker_]")
 
 #initialize session state
-'''in streamlit, every time the user interacts with the app clicks a button or changes an input, the script reruns from top to bottom.
-and we didn’t store the token in st.session_state, it would be lost on every rerun — meaning the user would get logged out after any interaction.
-'''
+#in streamlit, every time the user interacts with the app clicks a button or changes an input, the script reruns from top to bottom
+#and we didn’t store the token in st.session_state, it would be lost on every rerun — meaning the user would get logged out after any interaction.
+
 if "token" not in st.session_state: 
     st.session_state.token = None
 if "started" not in st.session_state:
