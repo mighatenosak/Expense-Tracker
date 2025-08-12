@@ -59,26 +59,6 @@ def top_categories():
 
 #registration
 @router.post("/auth/register")
-def register_user(user: RegisterUser):
-    #Check if email already exists
-    if users_collection.find_one({"email": user.email}):
-        return {"error": "Email already registered"}
-    #Get 'user' role or create it if not exists
-    role = roles_collection.find_one({"name": "user"})
-    if not role:
-        role_id = roles_collection.insert_one({"name": "user"}).inserted_id
-    else:
-        role_id = role["_id"]
-
-    # Hash password
-    hashed_pw = crud.hash_password(user.password)
-
-    # Insert user
-    users_collection.insert_one({
-        "full_name": user.full_name,
-        "email": user.email,
-        "password_hash": hashed_pw,
-        "role_id": role_id
-    })
-
-    return {"msg": "User registered successfully"}
+def register(user: RegisterUser):
+    result = crud.register_user(user.full_name, user.email, user.password)
+    return result
