@@ -3,6 +3,7 @@ from data_base import expenses_collection, categories_collection
 #For schema
 from models import Expense  
 from datetime import datetime
+from passlib.context import CryptContext
 
 #Create expense
 def add_expense(expense: Expense):
@@ -101,3 +102,8 @@ def get_top_categories(limit: int=3):
         {"$limit": limit}
     ]
     return list(expenses_collection.aggregate(pipeline))
+
+#add password hashing utility using bcrypt from Cryptocontext
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
