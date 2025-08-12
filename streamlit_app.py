@@ -13,6 +13,12 @@ URI=os.getenv("URI")
 st.set_page_config(page_title="Expense Tracker",page_icon="🧊", layout="centered")
 st.title(":red[_Expense Tracker_]")
 
+#initialize session state
+'''in streamlit, every time the user interacts with the app clicks a button or changes an input, the script reruns from top to bottom.
+and we didn’t store the token in st.session_state, it would be lost on every rerun — meaning the user would get logged out after any interaction.
+'''
+if "token" not in st.session_state: 
+    st.session_state.token = None
 if "started" not in st.session_state:
     st.session_state.started = False
 
@@ -22,12 +28,17 @@ if not st.session_state.started:
         st.session_state.started = True
         st.rerun()
 else:
-
-    #sidebar menu to switch between different sections
-    menu = st.sidebar.selectbox(
-        "Menu",
-        ["Add Expense", "View Expenses", "Add Category", "View Categories", "Monthly Summary", "Top 3 Categories"]
-    )
+    if st.session_state.token:
+        #sidebar menu to switch between different sections
+        menu = st.sidebar.selectbox(
+            "Menu",
+            ["Login","Register","Add Expense", "View Expenses", "Add Category", "View Categories", "Monthly Summary", "Top 3 Categories"]
+        )
+    else:
+        menu = st.sidebar.selectbox(
+            "Menu",
+            ["Login", "Register"]
+        )
 
     #add expense
     # if menu=="Add Expense":
@@ -62,6 +73,42 @@ else:
     #         category_list = []
 
     #     amount = st.number_input("Amount", min_value=0, step=1, placeholder="Enter an Amount")
+    
+    #register section
+    if menu == "Register":
+        st.subheader(":orange[Register New User]")
+        full_name = st.text_input("Full Name")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Register", type="primary"):
+            payload = {"full_name": full_name, "email": email, "password": password}
+            res = requests.post(f"{URI}/auth/register", json=payload)
+            if res.status_code == 200:
+                st.success(res.json().get("msg", "Registered successfully"))
+            else:
+                st.error(res.json().get("error", "Registration failed"))
+    #login
+    elif menu == "Login":
+        st.subheader(":orange[Login]")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login", type="primary"):
+            payload = {"email": email, "password": password}
+            res = requests.post(f"{URI}/auth/login", json=payload)
+            if res.status_code == 200:
+                st.session_state.token = res.json().get("access_token")
+                st.success("Logged in successfully!")
+                st.rerun()
+            else:
+                st.error(res.json().get("detail", "Login failed"))
+    #logout
+    elif menu == "Logout":
+        st.session_state.token = None
+        st.success("Logged out successfully!")
+        st.rerun()
+
     if menu == "Add Expense":
         st.subheader(":orange[Add New Expense]")
 
