@@ -27,18 +27,55 @@ if not st.session_state.started:
     if st.button("Start Expense Tracker",type="primary"):
         st.session_state.started = True
         st.rerun()
+elif st.session_state.token is None:
+    #only show login/register if not logged in
+    menu = st.sidebar.selectbox(
+        "Menu",
+        ["Login", "Register"]
+    )
+    #register section
+    if menu == "Register":
+        st.subheader(":orange[Register New User]")
+        full_name = st.text_input("Full Name")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Register", type="primary"):
+            payload = {"full_name": full_name, "email": email, "password": password}
+            res = requests.post(f"{URI}/auth/register", json=payload)
+            if res.status_code == 200:
+                st.success(res.json().get("msg", "Registered successfully"))
+            else:
+                st.error(res.json().get("error", "Registration failed"))
+        pass
+    #login
+    elif menu == "Login":
+        st.subheader(":orange[Login]")
+        email = st.text_input("Email")
+        password = st.text_input("Password", type="password")
+
+        if st.button("Login", type="primary"):
+            payload = {"email": email, "password": password}
+            res = requests.post(f"{URI}/auth/login", json=payload)
+            if res.status_code == 200:
+                st.session_state.token = res.json().get("access_token")
+                st.success("Logged in successfully!")
+                st.rerun()
+            else:
+                st.error(res.json().get("detail", "Login failed"))
+        pass
 else:
-    if st.session_state.token:
+    # if st.session_state.token:
         #sidebar menu to switch between different sections
-        menu = st.sidebar.selectbox(
-            "Menu",
-            ["Login","Register","Add Expense", "View Expenses", "Add Category", "View Categories", "Monthly Summary", "Top 3 Categories"]
-        )
-    else:
-        menu = st.sidebar.selectbox(
-            "Menu",
-            ["Login", "Register"]
-        )
+    menu = st.sidebar.selectbox(
+        "Menu",
+        ["Add Expense", "View Expenses", "Add Category", "View Categories", "Monthly Summary", "Top 3 Categories","Logout"]
+    )
+    # else:
+    #     menu = st.sidebar.selectbox(
+    #         "Menu",
+    #         ["Login", "Register"]
+    #     )
 
     #add expense
     # if menu=="Add Expense":
@@ -73,41 +110,6 @@ else:
     #         category_list = []
 
     #     amount = st.number_input("Amount", min_value=0, step=1, placeholder="Enter an Amount")
-    
-    #register section
-    if menu == "Register":
-        st.subheader(":orange[Register New User]")
-        full_name = st.text_input("Full Name")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-
-        if st.button("Register", type="primary"):
-            payload = {"full_name": full_name, "email": email, "password": password}
-            res = requests.post(f"{URI}/auth/register", json=payload)
-            if res.status_code == 200:
-                st.success(res.json().get("msg", "Registered successfully"))
-            else:
-                st.error(res.json().get("error", "Registration failed"))
-    #login
-    elif menu == "Login":
-        st.subheader(":orange[Login]")
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-
-        if st.button("Login", type="primary"):
-            payload = {"email": email, "password": password}
-            res = requests.post(f"{URI}/auth/login", json=payload)
-            if res.status_code == 200:
-                st.session_state.token = res.json().get("access_token")
-                st.success("Logged in successfully!")
-                st.rerun()
-            else:
-                st.error(res.json().get("detail", "Login failed"))
-    #logout
-    elif menu == "Logout":
-        st.session_state.token = None
-        st.success("Logged out successfully!")
-        st.rerun()
 
     if menu == "Add Expense":
         st.subheader(":orange[Add New Expense]")
@@ -213,3 +215,8 @@ else:
                 st.table(res.json())
             else:
                 st.error("Failed to fetch top categories.")
+    #logout
+    elif menu == "Logout":
+        st.session_state.token = None
+        st.success("Logged out successfully!")
+        st.rerun()
