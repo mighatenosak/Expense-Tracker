@@ -2,8 +2,10 @@
 from fastapi import APIRouter, Path
 from typing import Optional
 from datetime import date
-#importing Expense model or class
-from models import Expense
+#importing Expense model and RegisterUser model
+from models import Expense, RegisterUser
+from data_base import users_collection, roles_collection
+from bson import ObjectId
 import crud
 
 #creating a router instance
@@ -54,3 +56,29 @@ def total_for_month(month: str = Path(description= "Month in the format YYYY-MM,
 @router.get("/summary/top-categories")
 def top_categories():
     return crud.get_top_categories()
+
+#registration
+@router.post("/auth/register")
+def register_user(user: RegisterUser):
+    #Check if email already exists
+    if users_collection.find_one({"email": user.email}):
+        return {"error": "Email already registered"}
+    #Get 'user' role or create it if not exists
+    role = roles_collection.find_one({"name": "user"})
+    if not role:
+        role_id = roles_collection.insert_one({"name": "user"}).inserted_id
+    else:
+        role_id = role["_id"]
+
+    # Hash password
+    hashed_pw = crud.hash_password(user.password)
+
+    # Insert user
+    users_collection.insert_one({
+        "full_name": user.full_name,
+        "email": user.email,
+        "password_hash": hashed_pw,
+        "role_id": role_id
+    })
+
+    return {"msg": "User registered successfully"}
