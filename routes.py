@@ -3,7 +3,7 @@ from fastapi import APIRouter, Path
 from typing import Optional
 from datetime import date
 #importing Expense model and RegisterUser model
-from models import Expense, RegisterUser
+from models import Expense, RegisterUser, LoginUser
 from data_base import users_collection, roles_collection
 from bson import ObjectId
 import crud
@@ -62,3 +62,12 @@ def top_categories():
 def register(user: RegisterUser):
     result = crud.register_user(user.full_name, user.email, user.password)
     return result
+
+#login
+@router.post("/auth/login")
+def login(user: LoginUser):
+    db_user = crud.login_user(user.email, user.password)
+    if not db_user:
+        return {"detail": "Invalid credentials"}
+    # Here you'd normally create and return a JWT token
+    return {"access_token": "fake_token_for_now", "token_type": "bearer"}
