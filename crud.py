@@ -1,5 +1,5 @@
 #Connect to MongoDB
-from data_base import expenses_collection, categories_collection 
+from data_base import expenses_collection, categories_collection, users_collection, roles_collection
 #For schema
 from models import Expense  
 from datetime import datetime
@@ -102,6 +102,28 @@ def get_top_categories(limit: int=3):
         {"$limit": limit}
     ]
     return list(expenses_collection.aggregate(pipeline))
+
+#register user
+def register_user(full_name: str, email: str, password: str):
+    #check if email already exists
+    if users_collection.find_one({"email": email}):
+        return {"error": "Email already registered"}
+
+    #get user role or create it
+    role = roles_collection.find_one({"name": "user"})
+    if not role:
+        role_id = roles_collection.insert_one({"name": "user"}).inserted_id
+    else:
+        role_id = role["_id"]
+
+    #insert user
+    users_collection.insert_one({
+        "full_name": full_name,
+        "email": email,
+        "password_hash": hash_password(password),
+        "role_id": role_id
+    })
+    return {"msg": "User registered successfully"}
 
 #add password hashing utility using bcrypt from Cryptocontext
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
