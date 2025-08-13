@@ -1,12 +1,12 @@
 #To create a route group
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, HTTPException, Depends
 from typing import Optional
-from datetime import date
+from datetime import date, timedelta
 #importing Expense model and RegisterUser model
 from models import Expense, RegisterUser, LoginUser
-from data_base import users_collection, roles_collection
 from bson import ObjectId
 import crud
+from authorization import create_access_token, get_current_user, require_admin
 
 #creating a router instance
 router = APIRouter()
@@ -15,47 +15,54 @@ router = APIRouter()
 #Endpoints using the model
 #Route to create new expense
 @router.post("/expenses/")
-def create_expense(expense: Expense):
-    #call function to add to db
-    crud.add_expense(expense)
+def create_expense(expense: Expense, current_user: dict = Depends(get_current_user)):
+    crud.add_expense(expense, current_user)
     return {"msg": "Expense added"}
 #Get expenses
-@router.get("/expenses/")
-def view_expenses(start: Optional[date] =None, end: Optional[date] = None, category: Optional[str] = None):
-    if start and end:
-        return crud.get_expenses_by_date_range(start, end)
-    elif category:
-        return crud.get_expenses_by_category(category)
-    #return all if no filter
 
-    return crud.get_all_expenses()
+# View expenses — only current user's expenses
+@router.get("/expenses/")
+def view_expenses(
+    start: Optional[date] = None,
+    end: Optional[date] = None,
+    category: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    user_id = str(current_user["_id"])
+    if start and end:
+        return crud.get_expenses_by_date_range(start, end, user_id)
+    elif category:
+        return crud.get_expenses_by_category(category, user_id)
+    return crud.get_all_expenses(user_id)
 
 #Route to create category
 @router.post("/categories/")
-def create_category(name: str):
+def create_category(name: str, current_user: dict = Depends(require_admin)):
     return crud.add_category(name)
-
 #Route to get categories
 @router.get("/categories/")
-def view_categories():
+def view_categories(current_user: dict = Depends(get_current_user)):
     return crud.get_categories()
-
 
 # @router.get("/summary/monthly")
 # def monthly_summary():
 #     return crud.get_monthly_total()
 
 @router.get("/summary/monthly/{month}")
-def total_for_month(month: str = Path(description= "Month in the format YYYY-MM, e.g., 2025-08")):    #Month format "YYYY-MM"
-    return crud.get_total_for_month(month)
+def total_for_month(
+    month: str = Path(description="Month in the format YYYY-MM, e.g., 2025-08"),
+    current_user: dict = Depends(get_current_user)
+):
+    return crud.get_total_for_month(month, str(current_user["_id"]))
 
 # @router.get("/summary/weekly")
 # def weekly_summary():
 #     return crud.get_weekly_breakdown()
 
 @router.get("/summary/top-categories")
-def top_categories():
-    return crud.get_top_categories()
+def top_categories(current_user: dict = Depends(get_current_user)):
+    return crud.get_top_categories(str(current_user["_id"]))
+
 
 #registration
 @router.post("/auth/register")
@@ -69,5 +76,17 @@ def login(user: LoginUser):
     db_user = crud.login_user(user.email, user.password)
     if not db_user:
         return {"detail": "Invalid credentials"}
-    # Here you'd normally create and return a JWT token
-    return {"access_token": "fake_token_for_now", "token_type": "bearer"}
+
+    # Create JWT
+    token_data = {"sub": db_user["email"]}
+    access_token = create_access_token(token_data)
+
+    # Get role name
+    from crud import get_role_name
+    role_name = get_role_name(db_user["role_id"])
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "role": role_name
+    }
