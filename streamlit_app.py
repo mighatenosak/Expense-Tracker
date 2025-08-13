@@ -70,17 +70,17 @@ elif st.session_state.token is None:
 else:
     # if st.session_state.token:
         #sidebar menu to switch between different sections
-    menu_options = ["Add Expense", "View Expenses", "Monthly Summary", "Top 3 Categories", "Logout"]
+    menu_options = ["Add Expense", "View Expenses", "Monthly Summary", "Top 3 Categories","Logout"]
 
     if st.session_state.token:
-        menu_options = ["Add Expense", "View Expenses", "Monthly Summary", "Top 3 Categories", "Logout"]
-
+        menu_options = ["Add Expense", "View Expenses", "Monthly Summary", "Top 3 Categories","Logout"]
     if st.session_state.get("role") == "admin":
         menu_options.insert(2, "Add Category")
         menu_options.insert(3, "View Categories")
 
     menu = st.sidebar.selectbox("Menu", menu_options)
 
+ 
 
     # else:
     #     menu = st.sidebar.selectbox(
@@ -232,8 +232,10 @@ else:
                 st.table(res.json())
             else:
                 st.error("Failed to fetch top categories.")
+
     #logout
-    elif menu == "Logout":
-        st.session_state.token = None
-        st.success("Logged out successfully!")
+    elif menu=="Logout":
+        st.session_state.token= None
+        st.success("Logged out!")
+        # time.sleep(1)
         st.rerun()

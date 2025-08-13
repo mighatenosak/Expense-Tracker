@@ -1,10 +1,9 @@
 #To create a route group
-from fastapi import APIRouter, Path, HTTPException, Depends
+from fastapi import APIRouter, Path, Depends
 from typing import Optional
-from datetime import date, timedelta
+from datetime import date
 #importing Expense model and RegisterUser model
 from models import Expense, RegisterUser, LoginUser
-from bson import ObjectId
 import crud
 from authorization import create_access_token, get_current_user, require_admin
 

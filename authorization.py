@@ -8,12 +8,12 @@ from bson import ObjectId
 from typing import Optional
 
 # JWT Config
-SECRET_KEY = "axel"  # use a long random string
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+SECRET_KEY = "axel"  # use a long random string(encryption key)
+ALGORITHM = "HS256" #hashing algorithm for signing tokens
+ACCESS_TOKEN_EXPIRE_MINUTES = 60    #token expires after 60mins
 
 # OAuth2 scheme for reading token
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")     #telling fastapi where tokens are.
 
 # Create JWT token
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -25,7 +25,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire})
     
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)   
 # Get current user from token
 def get_current_user(token: str = Depends(oauth2_scheme)):
     try:
