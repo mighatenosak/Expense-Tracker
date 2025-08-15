@@ -1,5 +1,5 @@
 #To create a route group
-from fastapi import APIRouter, Path, Depends
+from fastapi import APIRouter, Path, Depends, Body
 from typing import Optional
 from datetime import date
 #importing Expense model and RegisterUser model
@@ -89,3 +89,34 @@ def login(user: LoginUser):
         "token_type": "bearer",
         "role": role_name
     }
+
+#view users(for users)
+@router.get("/admin/users")
+def view_users(current_user: dict = Depends(require_admin)):
+    return crud.get_all_users()
+
+#update expenses(for users)
+@router.put("/expenses/{expense_id}")
+def edit_expense(expense_id: str, updates: dict = Body(...), current_user: dict = Depends(get_current_user)):
+    admin = crud.get_role_name(current_user["role_id"]) == "admin"
+    return crud.update_expense(expense_id, updates, current_user, admin=admin)
+
+#delete user(admin)
+@router.delete("/admin/users/{user_id}")
+def remove_user(user_id: str, current_user: dict = Depends(require_admin)):
+    return crud.delete_user(user_id)
+
+#update user(admin)
+@router.put("/admin/users/{user_id}")
+def edit_user(user_id: str, updates: dict, current_user: dict = Depends(require_admin)):
+    return crud.update_user(user_id, updates)
+
+#update categories(admin)
+@router.put("/categories/{category_id}")
+def edit_category(category_id: str, name: str, current_user: dict = Depends(require_admin)):
+    return crud.update_category(category_id, name)
+
+#Delete category(admin)
+@router.delete("/categories/{category_id}")
+def remove_category(category_id: str, current_user: dict = Depends(require_admin)):
+    return crud.delete_category(category_id)

@@ -6,6 +6,7 @@ from datetime import datetime, date
 from passlib.context import CryptContext
 from typing import Union, Optional
 from bson import ObjectId
+from typing import Any
 
 #Create expense
 def add_expense(expense: Union[Expense, dict], current_user: dict):
@@ -153,3 +154,48 @@ def get_role_name(role_id: Union[str, ObjectId]) -> Optional[str]:
             return None
     role = roles_collection.find_one({"_id": role_id})
     return role["name"] if role else None
+
+#view users(admin only)
+def get_all_users():
+    users = list(users_collection.find({}, {"password_hash": 0}))  # exclude passwords
+    for user in users:
+        user["_id"] = str(user["_id"])
+        user["role_id"] = str(user["role_id"])
+    return users
+
+#update expenses (for users)
+def update_expense(expense_id: str, updates: dict, current_user: dict, admin: bool = False):
+    query: dict[str, Any] = {"_id": ObjectId(expense_id)}
+    if not admin:
+        query["user_id"] = str(current_user["_id"])  # match stored string user_id
+
+    # Clean empty fields
+    updates = {k: v for k, v in updates.items() if v is not None and v != ""}
+
+    result = expenses_collection.update_one(query, {"$set": updates})
+    if result.modified_count == 0:
+        return {"error": "No expense updated. Check ID or permissions."}
+    return {"msg": "Expense updated successfully"}
+
+#delete user(admin)
+def delete_user(user_id: str):
+    result = users_collection.delete_one({"_id": ObjectId(user_id)})
+    return {"deleted_count": result.deleted_count}
+
+#update user(admin)
+def update_user(user_id: str, updates: dict):
+    if "password" in updates:
+        updates["password_hash"] = hash_password(updates.pop("password"))
+    result = users_collection.update_one({"_id": ObjectId(user_id)}, {"$set": updates})
+    return {"modified_count": result.modified_count}
+
+#update categories(admin)
+def update_category(category_id: str, name: str):
+    result = categories_collection.update_one({"_id": ObjectId(category_id)}, {"$set": {"name": name}})
+    return {"modified_count": result.modified_count}
+
+#delete category(admin)
+
+def delete_category(category_id: str):
+    result = categories_collection.delete_one({"_id": ObjectId(category_id)})
+    return {"deleted_count": result.deleted_count}
