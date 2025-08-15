@@ -1,8 +1,5 @@
 # Expense-Tracker
 A sleek and simple expense tracker — effortlessly CRUD your spendings on MongoDB with an intuitive interface with streamlit and real-time insights.
-<br>
-Author - Salman Ali Khan
-<p>1. Backend Structure (FastAPI)
 
 main.py – Entry point that starts FastAPI and includes routes.
 
@@ -37,3 +34,6 @@ Summary Reports (monthly totals, top 3 categories)
 Filters (by date range, category)
 
 Streamlit UI with different menus for admin and normal users</pr>
+<br>
+Author - Salman Ali Khan
+<p>1. Backend Structure (FastAPI)
