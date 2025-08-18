@@ -5,35 +5,38 @@ from dotenv import load_dotenv
 import os
 import time
 
+#load.env file
 load_dotenv()
+#read backend fastapi base url
 URI = os.getenv("URI")
 
+#streamlit page config
 st.set_page_config(page_title="Expense Tracker", page_icon="🧊", layout="centered")
 st.title(":red[_Expense Tracker_]")
 
-# --- Session State ---
+#session state initialization
 if "token" not in st.session_state:
-    st.session_state.token = None
+    st.session_state.token = None   #stores JWT token after login
 if "role" not in st.session_state:
-    st.session_state.role = "user"
+    st.session_state.role = "user"  #checks is user or admin
 if "started" not in st.session_state:
     st.session_state.started = False
 
 
-# --- Helper: Get authorization headers ---
+#get authorization headers
+#return JWT token for authentic requests
 def get_headers():
-    """Return Authorization headers if logged in."""
     return {"Authorization": f"Bearer {st.session_state.token}"} if st.session_state.token else {}
 
 
-# --- Start screen ---
+#start screen
 if not st.session_state.started:
     if st.button("Start Expense Tracker", type="primary"):
-        st.session_state.started = True
+        st.session_state.started = True #refreshes app as started
         st.rerun()
 
-# --- Auth screens ---
-elif st.session_state.token is None:
+#auth screen
+elif st.session_state.token is None:    #if not logged in show menu
     menu = st.sidebar.selectbox("Menu", ["Login", "Register"])
 
     if menu == "Register":
@@ -44,7 +47,7 @@ elif st.session_state.token is None:
 
         if st.button("Register", type="primary"):
             payload = {"full_name": full_name, "email": email, "password": password}
-            res = requests.post(f"{URI}/auth/register", json=payload)
+            res = requests.post(f"{URI}/auth/register", json=payload)   #send post req to /auth/register
             if res.status_code == 200:
                 st.success(res.json().get("msg", "Registered successfully"))
             else:
@@ -57,7 +60,7 @@ elif st.session_state.token is None:
 
         if st.button("Login", type="primary"):
             payload = {"email": email, "password": password}
-            res = requests.post(f"{URI}/auth/login", json=payload)
+            res = requests.post(f"{URI}/auth/login", json=payload)  #send credentials to /auth/login
             if res.status_code == 200 and "access_token" in res.json():
                 st.session_state.token = res.json()["access_token"]
                 st.session_state.role = res.json().get("role", "user")
@@ -67,11 +70,12 @@ elif st.session_state.token is None:
             else:
                 st.error(res.json().get("detail", "Login failed"))
 
-# --- Logged in screens ---
+#logged UI
 else:
-    # Menu without logout
+    #menu
     menu_options = ["Add Expense", "View Expenses", "Monthly Summary", "Top 3 Categories", "Update Expense"]
 
+    #if admin add more options
     if st.session_state.role == "admin":
         menu_options += [
             "View Users", "Update User", "Delete User",
@@ -80,15 +84,15 @@ else:
 
     menu = st.sidebar.selectbox("Menu", menu_options)
 
-    # Sidebar logout button
+    #sidebar logout button
     if st.sidebar.button("Logout", type="primary"):
-        st.session_state.token = None
-        st.session_state.role = "user"
+        st.session_state.token = None   #clear token
+        st.session_state.role = "user"  #reset role
         st.success("Logged out!")
         time.sleep(1)
-        st.rerun()
+        st.rerun()  #reload app UI
 
-    # --- Add Expense ---
+    #add expense
     if menu == "Add Expense":
         st.subheader(":orange[Add New Expense]")
         category_list = []
@@ -111,7 +115,7 @@ else:
                 else:
                     st.error("Failed to add expense")
 
-    # --- View Expenses ---
+    #view expenses
     elif menu == "View Expenses":
         st.subheader(":orange[All Expenses]")
         start_date = st.date_input("Start Date", value=None)
@@ -130,7 +134,7 @@ else:
             else:
                 st.error("Failed to fetch expenses")
 
-    # --- Monthly Summary ---
+    #monthly summary
     elif menu == "Monthly Summary":
         month = st.text_input("Month (YYYY-MM)", value=str(datetime.date.today())[:7])
         if st.button("Get Summary", type="primary"):
@@ -140,7 +144,7 @@ else:
             else:
                 st.error("Failed to fetch summary")
 
-    # --- Top 3 Categories ---
+    #top 3 Categories
     elif menu == "Top 3 Categories":
         if st.button("Get Top Categories", type="primary"):
             res = requests.get(f"{URI}/summary/top-categories", headers=get_headers())
@@ -149,7 +153,7 @@ else:
             else:
                 st.error("Failed to fetch data")
 
-    # --- Update Expense ---
+    #update expense
     elif menu == "Update Expense":
         st.subheader("Update Expense")
         res = requests.get(f"{URI}/expenses/", headers=get_headers())
@@ -195,7 +199,7 @@ else:
         else:
             st.error("Failed to load expenses.")
 
-    # --- View Users (Admin) ---
+    #view users (admin)
     elif menu == "View Users":
         if st.button("Get Users", type="primary"):
             res = requests.get(f"{URI}/admin/users", headers=get_headers())
@@ -204,7 +208,7 @@ else:
             else:
                 st.error("Failed to fetch users")
 
-    # --- Update User (Admin) ---
+    #update user (admin)
     elif menu == "Update User":
         res = requests.get(f"{URI}/admin/users", headers=get_headers())
         if res.status_code == 200:
@@ -240,7 +244,7 @@ else:
         else:
             st.error("Failed to load users.")
 
-    # --- Delete User (Admin) ---
+    #delete user (admin)
     elif menu == "Delete User":
         res = requests.get(f"{URI}/admin/users", headers=get_headers())
         if res.status_code == 200:
@@ -263,7 +267,7 @@ else:
         else:
             st.error("Failed to load users.")
 
-    # --- Add Category (Admin) ---
+    #add category (admin)
     elif menu == "Add Category":
         cat_name = st.text_input("Category Name")
         if st.button("Add Category", type="primary"):
@@ -273,7 +277,7 @@ else:
             else:
                 st.error("Failed to add category")
 
-    # --- View Categories (Admin) ---
+    #view categories (admin)
     elif menu == "View Categories":
         if st.button("Get Categories", type="primary"):
             res = requests.get(f"{URI}/categories/", headers=get_headers())
@@ -282,7 +286,7 @@ else:
             else:
                 st.error("Failed to fetch categories")
 
-    # --- Update Category (Admin) ---
+    #update category (admin)
     elif menu == "Update Category":
         res = requests.get(f"{URI}/categories/", headers=get_headers())
         if res.status_code == 200:
@@ -309,7 +313,7 @@ else:
         else:
             st.error("Failed to load categories.")
 
-    # --- Delete Category (Admin) ---
+    #delete category (admin)
     elif menu == "Delete Category":
         res = requests.get(f"{URI}/categories/", headers=get_headers())
         if res.status_code == 200:
