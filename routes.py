@@ -1,7 +1,8 @@
 #To create a route group
-from fastapi import APIRouter, Path, Depends, Body
+#APIrouter allows grouping of all routes together so that it cann attach them to the main FASTAPI app
+from fastapi import APIRouter, Path, Depends, Body  #Depends for dependency injection(autho check, current user info)
 from typing import Optional
-from datetime import date
+from datetime import date   #for date filtering in queries
 #importing Expense model and RegisterUser model
 from models import Expense, RegisterUser, LoginUser
 import crud
@@ -14,12 +15,14 @@ router = APIRouter()
 #Endpoints using the model
 #Route to create new expense
 @router.post("/expenses/")
+#current user(token required)
 def create_expense(expense: Expense, current_user: dict = Depends(get_current_user)):
     crud.add_expense(expense, current_user)
     return {"msg": "Expense added"}
-#Get expenses
+#get expenses
 
-# View expenses — only current user's expenses
+#view expenses — only current user's expenses
+#requires authentication
 @router.get("/expenses/")
 def view_expenses(
     start: Optional[date] = None,
@@ -27,18 +30,19 @@ def view_expenses(
     category: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
+    #chooses correct crud function based on the filters given:
     user_id = str(current_user["_id"])
     if start and end:
         return crud.get_expenses_by_date_range(start, end, user_id)
     elif category:
         return crud.get_expenses_by_category(category, user_id)
-    return crud.get_all_expenses(user_id)
+    return crud.get_all_expenses(user_id)   #no filter show all expenses
 
-#Route to create category
+#route to create category
 @router.post("/categories/")
 def create_category(name: str, current_user: dict = Depends(require_admin)):
     return crud.add_category(name)
-#Route to get categories
+#route to get categories
 @router.get("/categories/")
 def view_categories(current_user: dict = Depends(get_current_user)):
     return crud.get_categories()
@@ -76,21 +80,21 @@ def login(user: LoginUser):
     if not db_user:
         return {"detail": "Invalid credentials"}
 
-    # Create JWT
+    #create JWT with "sub" set to the users email
     token_data = {"sub": db_user["email"]}
     access_token = create_access_token(token_data)
 
-    # Get role name
+    #get role name
     from crud import get_role_name
     role_name = get_role_name(db_user["role_id"])
-
+    #return token, token type and user role
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "role": role_name
     }
 
-#view users(for users)
+#view users(for admin)
 @router.get("/admin/users")
 def view_users(current_user: dict = Depends(require_admin)):
     return crud.get_all_users()
